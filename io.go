@@ -1,6 +1,7 @@
 package prism
 
 import (
+	"bytes"
 	"image"
 	"image/color"
 	"image/draw"
@@ -127,24 +128,37 @@ func Open(filename string, opts ...DecodeOption) (image.Image, error) {
 }
 
 // Decode reads an image from r, decodes it, and returns the image.
+// When MaxImageSize is set, dimensions are checked BEFORE allocating pixel
+// data, preventing decompression bomb attacks (CVE-2023-36308).
 func Decode(r io.Reader, opts ...DecodeOption) (image.Image, error) {
 	var cfg decodeConfig
 	for _, opt := range opts {
 		opt(&cfg)
 	}
 
-	img, _, err := image.Decode(r)
+	// Buffer the entire input so we can read it twice: once for config
+	// (dimensions only, no pixel allocation) and once for full decode.
+	data, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
 
-	// Enforce maximum image size.
+	// Enforce maximum image size BEFORE full decode to prevent
+	// decompression bombs from allocating gigabytes of memory.
 	if cfg.maxImageSize > 0 {
-		bounds := img.Bounds()
-		pixels := bounds.Dx() * bounds.Dy()
-		if pixels > cfg.maxImageSize {
-			return nil, ErrUnsupportedFormat // image too large
+		imgCfg, _, err := image.DecodeConfig(bytes.NewReader(data))
+		if err != nil {
+			return nil, err
 		}
+		pixels := int64(imgCfg.Width) * int64(imgCfg.Height)
+		if pixels > int64(cfg.maxImageSize) {
+			return nil, ErrImageTooLarge
+		}
+	}
+
+	img, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return nil, err
 	}
 
 	return img, nil
@@ -152,7 +166,7 @@ func Decode(r io.Reader, opts ...DecodeOption) (image.Image, error) {
 
 // Save encodes an image and saves it to a file.
 // The format is determined from the filename extension.
-func Save(img image.Image, filename string, opts ...EncodeOption) error {
+func Save(img image.Image, filename string, opts ...EncodeOption) (retErr error) {
 	format, err := FormatFromFilename(filename)
 	if err != nil {
 		return err
@@ -162,7 +176,11 @@ func Save(img image.Image, filename string, opts ...EncodeOption) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		if cerr := f.Close(); retErr == nil {
+			retErr = cerr
+		}
+	}()
 
 	return Encode(f, img, format, opts...)
 }

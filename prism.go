@@ -58,6 +58,9 @@ type EncodeOption func(*encodeConfig)
 // ErrUnsupportedFormat is returned when the image format is not supported.
 var ErrUnsupportedFormat = errors.New("imaging: unsupported image format")
 
+// ErrImageTooLarge is returned when an image exceeds the MaxImageSize limit.
+var ErrImageTooLarge = errors.New("imaging: image too large")
+
 // Resample filters — identical kernels to disintegration/imaging v1.6.2.
 var (
 	NearestNeighbor   = ResampleFilter{0, func(x float64) float64 { return 0 }}

@@ -154,10 +154,13 @@ func TestMaxImageSize(t *testing.T) {
 		t.Fatalf("expected success with large limit: %v", err)
 	}
 
-	// Should fail with small limit.
+	// Should fail with small limit and return ErrImageTooLarge.
 	_, err = Decode(bytes.NewReader(buf.Bytes()), MaxImageSize(100))
 	if err == nil {
 		t.Fatal("expected error with small limit")
+	}
+	if err != ErrImageTooLarge {
+		t.Fatalf("expected ErrImageTooLarge, got: %v", err)
 	}
 }
 
