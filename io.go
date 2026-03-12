@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	_ "golang.org/x/image/bmp"
-	_ "golang.org/x/image/tiff"
+	"golang.org/x/image/bmp"
+	"golang.org/x/image/tiff"
 )
 
 // decodeConfig holds decode options.
@@ -204,6 +204,8 @@ func Encode(w io.Writer, img image.Image, format Format, opts ...EncodeOption) e
 		return encodeBMP(w, img)
 	case TIFF:
 		return encodeTIFF(w, img)
+	case WEBP:
+		return ErrUnsupportedFormat // WebP encoding requires cgo; decode-only via x/image/webp
 	default:
 		return ErrUnsupportedFormat
 	}
@@ -251,15 +253,10 @@ func encodeGIF(w io.Writer, img image.Image, cfg encodeConfig) error {
 
 // encodeBMP encodes an image in BMP format.
 func encodeBMP(w io.Writer, img image.Image) error {
-	// BMP encoding is simple: use the x/image/bmp encoder if available,
-	// otherwise fall back to manual encoding.
-	// For now, return unsupported — BMP encode support added in Phase 4.
-	return ErrUnsupportedFormat
+	return bmp.Encode(w, img)
 }
 
 // encodeTIFF encodes an image in TIFF format.
 func encodeTIFF(w io.Writer, img image.Image) error {
-	// TIFF encoding via x/image/tiff.
-	// For now, return unsupported — TIFF encode support added in Phase 4.
-	return ErrUnsupportedFormat
+	return tiff.Encode(w, img, nil)
 }

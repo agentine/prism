@@ -218,6 +218,51 @@ func TestResampleFilterKernels(t *testing.T) {
 	}
 }
 
+func TestEncodeDecodeBMP(t *testing.T) {
+	src := New(8, 8, color.NRGBA{R: 100, G: 200, B: 50, A: 255})
+
+	var buf bytes.Buffer
+	if err := Encode(&buf, src, BMP); err != nil {
+		t.Fatalf("encode: %v", err)
+	}
+
+	img, err := Decode(&buf)
+	if err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+
+	if img.Bounds().Dx() != 8 || img.Bounds().Dy() != 8 {
+		t.Fatalf("size mismatch after roundtrip")
+	}
+}
+
+func TestEncodeDecodeTIFF(t *testing.T) {
+	src := New(8, 8, color.NRGBA{R: 100, G: 200, B: 50, A: 255})
+
+	var buf bytes.Buffer
+	if err := Encode(&buf, src, TIFF); err != nil {
+		t.Fatalf("encode: %v", err)
+	}
+
+	img, err := Decode(&buf)
+	if err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+
+	if img.Bounds().Dx() != 8 || img.Bounds().Dy() != 8 {
+		t.Fatalf("size mismatch after roundtrip")
+	}
+}
+
+func TestEncodeWEBP_Unsupported(t *testing.T) {
+	src := New(8, 8, color.White)
+	var buf bytes.Buffer
+	err := Encode(&buf, src, WEBP)
+	if err != ErrUnsupportedFormat {
+		t.Fatalf("expected ErrUnsupportedFormat, got: %v", err)
+	}
+}
+
 // Verify decode of various formats by encoding and decoding.
 func TestDecodeJPEG(t *testing.T) {
 	src := New(4, 4, color.NRGBA{R: 200, G: 100, B: 50, A: 255})
