@@ -83,6 +83,39 @@ func TestThumbnail(t *testing.T) {
 	}
 }
 
+func TestResize_DifferentFiltersProduceDifferentOutput(t *testing.T) {
+	// Create a test image with varying pixel values to ensure filters differ.
+	src := image.NewNRGBA(image.Rect(0, 0, 100, 100))
+	for y := 0; y < 100; y++ {
+		for x := 0; x < 100; x++ {
+			src.SetNRGBA(x, y, color.NRGBA{
+				R: uint8(x * 255 / 100),
+				G: uint8(y * 255 / 100),
+				B: uint8((x + y) * 255 / 200),
+				A: 255,
+			})
+		}
+	}
+
+	resLanczos := Resize(src, 30, 30, Lanczos)
+	resLinear := Resize(src, 30, 30, Linear)
+
+	// Count differing pixels — different filters must produce different output.
+	diffs := 0
+	for y := 0; y < 30; y++ {
+		for x := 0; x < 30; x++ {
+			c1 := resLanczos.NRGBAAt(x, y)
+			c2 := resLinear.NRGBAAt(x, y)
+			if c1 != c2 {
+				diffs++
+			}
+		}
+	}
+	if diffs == 0 {
+		t.Fatal("Lanczos and Linear filters produced identical output — filter parameter likely not passed through")
+	}
+}
+
 func TestCrop(t *testing.T) {
 	src := New(100, 100, color.NRGBA{R: 255, G: 0, B: 0, A: 255})
 	dst := Crop(src, image.Rect(10, 10, 60, 60))

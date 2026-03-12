@@ -48,8 +48,8 @@ func Resize(img image.Image, width, height int, filter ResampleFilter) *image.NR
 	}
 
 	// Two-pass separable resize: horizontal then vertical.
-	tmp := resizeHorizontal(img, width)
-	return resizeVertical(tmp, height)
+	tmp := resizeHorizontal(img, width, filter)
+	return resizeVertical(tmp, height, filter)
 }
 
 // Fit scales the image to fit within the given dimensions, preserving aspect
@@ -154,7 +154,7 @@ func resizeNearest(img image.Image, width, height int) *image.NRGBA {
 
 // resizeHorizontal resizes the image horizontally using the filter from the
 // first call. It reads pixels via scanner and writes to a new image.
-func resizeHorizontal(img image.Image, width int) *image.NRGBA {
+func resizeHorizontal(img image.Image, width int, filter ResampleFilter) *image.NRGBA {
 	bounds := img.Bounds()
 	srcW := bounds.Dx()
 	srcH := bounds.Dy()
@@ -164,7 +164,7 @@ func resizeHorizontal(img image.Image, width int) *image.NRGBA {
 	}
 
 	dst := image.NewNRGBA(image.Rect(0, 0, width, srcH))
-	weights := precomputeWeights(width, srcW, Lanczos)
+	weights := precomputeWeights(width, srcW, filter)
 	s := newScanner(img)
 
 	parallel(0, srcH, func(y int) {
@@ -193,7 +193,7 @@ func resizeHorizontal(img image.Image, width int) *image.NRGBA {
 }
 
 // resizeVertical resizes the image vertically using the filter.
-func resizeVertical(img *image.NRGBA, height int) *image.NRGBA {
+func resizeVertical(img *image.NRGBA, height int, filter ResampleFilter) *image.NRGBA {
 	srcW := img.Bounds().Dx()
 	srcH := img.Bounds().Dy()
 
@@ -202,7 +202,7 @@ func resizeVertical(img *image.NRGBA, height int) *image.NRGBA {
 	}
 
 	dst := image.NewNRGBA(image.Rect(0, 0, srcW, height))
-	weights := precomputeWeights(height, srcH, Lanczos)
+	weights := precomputeWeights(height, srcH, filter)
 
 	parallel(0, height, func(y int) {
 		dstOff := y * dst.Stride
