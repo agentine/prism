@@ -156,9 +156,19 @@ func Decode(r io.Reader, opts ...DecodeOption) (image.Image, error) {
 		}
 	}
 
+	// Read EXIF orientation before full decode (only meaningful for JPEG).
+	var orientation int
+	if cfg.autoOrientation {
+		orientation = readOrientation(bytes.NewReader(data))
+	}
+
 	img, _, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
 		return nil, err
+	}
+
+	if orientation > 1 {
+		img = applyOrientation(img, orientation)
 	}
 
 	return img, nil
