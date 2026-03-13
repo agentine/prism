@@ -25,9 +25,6 @@ func AdjustBrightness(img image.Image, percentage float64) *image.NRGBA {
 func AdjustContrast(img image.Image, percentage float64) *image.NRGBA {
 	percentage = math.Max(-100, math.Min(100, percentage))
 	v := (100 + percentage) / 100
-	if percentage < 0 {
-		v = 1 + percentage/100
-	}
 
 	var lut [256]uint8
 	for i := 0; i < 256; i++ {
@@ -43,10 +40,9 @@ func AdjustGamma(img image.Image, gamma float64) *image.NRGBA {
 		return Clone(img)
 	}
 
-	inv := 1.0 / gamma
 	var lut [256]uint8
 	for i := 0; i < 256; i++ {
-		lut[i] = clamp(math.Pow(float64(i)/255.0, inv) * 255.0)
+		lut[i] = clamp(math.Pow(float64(i)/255.0, gamma) * 255.0)
 	}
 
 	return applyLUT(img, lut)

@@ -199,9 +199,16 @@ func cosineKernel(x float64) float64 {
 	return 0
 }
 
+// maxDimPixels is the maximum number of pixels allowed in a single image
+// to prevent OOM from untrusted dimensions.
+const maxDimPixels = 100_000_000 // 100 megapixels
+
 // New creates a new image of the given size filled with the given color.
 func New(width, height int, fillColor color.Color) *image.NRGBA {
 	if width <= 0 || height <= 0 {
+		return &image.NRGBA{}
+	}
+	if int64(width)*int64(height) > maxDimPixels {
 		return &image.NRGBA{}
 	}
 

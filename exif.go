@@ -138,11 +138,11 @@ func applyOrientation(img image.Image, orientation int) image.Image {
 	case 5:
 		return Transpose(img)
 	case 6:
-		return Rotate270(img)
+		return Rotate90(img)
 	case 7:
 		return Transverse(img)
 	case 8:
-		return Rotate90(img)
+		return Rotate270(img)
 	default:
 		return img
 	}

@@ -42,6 +42,10 @@ func Resize(img image.Image, width, height int, filter ResampleFilter) *image.NR
 		}
 	}
 
+	if int64(width)*int64(height) > maxDimPixels {
+		return &image.NRGBA{}
+	}
+
 	if filter.Support <= 0 {
 		// NearestNeighbor — no interpolation.
 		return resizeNearest(img, width, height)

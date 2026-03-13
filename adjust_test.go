@@ -34,18 +34,18 @@ func TestAdjustContrast(t *testing.T) {
 func TestAdjustGamma(t *testing.T) {
 	src := New(10, 10, color.NRGBA{R: 128, G: 128, B: 128, A: 255})
 
-	// gamma > 1 brightens (raises midtones)
+	// gamma > 1 darkens (per imaging v1.6.2: pow(0.5, 2.0)=0.25)
 	dst := AdjustGamma(src, 2.0)
 	c := dst.NRGBAAt(0, 0)
-	if c.R <= 128 {
-		t.Fatalf("gamma 2.0 should brighten, got R=%d", c.R)
+	if c.R >= 128 {
+		t.Fatalf("gamma 2.0 should darken, got R=%d", c.R)
 	}
 
-	// gamma < 1 darkens
+	// gamma < 1 brightens (per imaging v1.6.2: pow(0.5, 0.5)=0.707)
 	dst2 := AdjustGamma(src, 0.5)
 	c2 := dst2.NRGBAAt(0, 0)
-	if c2.R >= 128 {
-		t.Fatalf("gamma 0.5 should darken, got R=%d", c2.R)
+	if c2.R <= 128 {
+		t.Fatalf("gamma 0.5 should brighten, got R=%d", c2.R)
 	}
 }
 
@@ -146,6 +146,18 @@ func TestConvolve3x3(t *testing.T) {
 	c := dst.NRGBAAt(5, 5)
 	if c.R != 100 || c.G != 100 || c.B != 100 {
 		t.Fatalf("identity kernel should preserve color, got %v", c)
+	}
+}
+
+func TestConvolve5x5(t *testing.T) {
+	src := New(10, 10, color.NRGBA{R: 100, G: 100, B: 100, A: 255})
+	// Identity kernel: center = 1, rest = 0.
+	var kernel [25]float64
+	kernel[12] = 1
+	dst := Convolve5x5(src, kernel, nil)
+	c := dst.NRGBAAt(5, 5)
+	if c.R != 100 || c.G != 100 || c.B != 100 {
+		t.Fatalf("identity 5x5 kernel should preserve color, got %v", c)
 	}
 }
 

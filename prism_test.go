@@ -263,6 +263,45 @@ func TestEncodeWEBP_Unsupported(t *testing.T) {
 	}
 }
 
+func TestExifOrientation6_Rotate90(t *testing.T) {
+	// Create a 4-wide x 2-tall image
+	src := New(4, 2, color.NRGBA{R: 100, G: 100, B: 100, A: 255})
+	// Orientation 6 per EXIF spec = 90 CW rotation, so 4x2 becomes 2x4
+	result := applyOrientation(src, 6)
+	if result.Bounds().Dx() != 2 || result.Bounds().Dy() != 4 {
+		t.Fatalf("orientation 6 should rotate 90 CW (4x2->2x4), got %dx%d",
+			result.Bounds().Dx(), result.Bounds().Dy())
+	}
+}
+
+func TestExifOrientation8_Rotate270(t *testing.T) {
+	// Create a 4-wide x 2-tall image
+	src := New(4, 2, color.NRGBA{R: 100, G: 100, B: 100, A: 255})
+	// Orientation 8 per EXIF spec = 270 CW rotation, so 4x2 becomes 2x4
+	result := applyOrientation(src, 8)
+	if result.Bounds().Dx() != 2 || result.Bounds().Dy() != 4 {
+		t.Fatalf("orientation 8 should rotate 270 CW (4x2->2x4), got %dx%d",
+			result.Bounds().Dx(), result.Bounds().Dy())
+	}
+}
+
+func TestNewDimensionOverflow(t *testing.T) {
+	// Extremely large dimensions should return empty image, not OOM
+	img := New(1_000_000, 1_000_000, color.White)
+	if img.Bounds().Dx() != 0 {
+		t.Fatal("expected empty image for oversized dimensions")
+	}
+}
+
+func TestResizeDimensionOverflow(t *testing.T) {
+	src := New(4, 4, color.White)
+	// Extremely large target dimensions should return empty image
+	dst := Resize(src, 1_000_000, 1_000_000, Lanczos)
+	if dst.Bounds().Dx() != 0 {
+		t.Fatal("expected empty image for oversized resize dimensions")
+	}
+}
+
 // Verify decode of various formats by encoding and decoding.
 func TestDecodeJPEG(t *testing.T) {
 	src := New(4, 4, color.NRGBA{R: 200, G: 100, B: 50, A: 255})
